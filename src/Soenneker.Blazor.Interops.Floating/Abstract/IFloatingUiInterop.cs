@@ -1,15 +1,18 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Soenneker.Blazor.Interops.Floating.Abstract;
 
 /// <summary>
-/// A higher-level Blazor utility built on top of <see cref="IFloatingInterop"/>.
+/// Provides shared Blazor interop for loading Floating UI browser dependencies.
 /// </summary>
-public interface IFloatingUiInterop
+public interface IFloatingUiInterop : IAsyncDisposable
 {
     /// <summary>
-    /// Ensures the underlying JavaScript module has been loaded and is ready for use.
+    /// Ensures the Floating UI core and DOM browser globals are available.
     /// </summary>
-    ValueTask Initialize(CancellationToken cancellationToken = default);
+    /// <param name="useCdn">Whether to load Floating UI from CDN or from this package's static web assets.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    ValueTask Initialize(bool useCdn = true, CancellationToken cancellationToken = default);
 }

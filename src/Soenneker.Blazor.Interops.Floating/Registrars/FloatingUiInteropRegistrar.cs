@@ -11,13 +11,19 @@ namespace Soenneker.Blazor.Interops.Floating.Registrars;
 public static class FloatingUiInteropRegistrar
 {
     /// <summary>
-    /// Adds <see cref="IFloatingInterop"/> and <see cref="IFloatingUiInterop"/> as scoped services.
+    /// Adds <see cref="IFloatingUiInterop"/> as a scoped service.
+    /// </summary>
+    public static IServiceCollection AddFloatingInteropAsScoped(this IServiceCollection services)
+    {
+        return services.AddFloatingUiInteropAsScoped();
+    }
+
+    /// <summary>
+    /// Adds <see cref="IFloatingUiInterop"/> as a scoped service.
     /// </summary>
     public static IServiceCollection AddFloatingUiInteropAsScoped(this IServiceCollection services)
     {
-        services.AddResourceLoaderAsScoped()
-                .TryAddScoped<IFloatingInterop, FloatingInterop>();
-
+        services.AddResourceLoaderAsScoped();
         services.TryAddScoped<IFloatingUiInterop, FloatingUiInterop>();
 
         return services;

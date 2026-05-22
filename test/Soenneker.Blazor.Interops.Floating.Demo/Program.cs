@@ -35,7 +35,6 @@ public sealed class Program
 
             builder.Services.AddQuarkSuiteAsScoped();
             builder.Services.AddFloatingUiInteropAsScoped();
-            builder.Services.AddLucideIconsAsScoped();
 
             WebAssemblyHost host = builder.Build();
 
