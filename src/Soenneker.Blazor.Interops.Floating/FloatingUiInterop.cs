@@ -12,13 +12,13 @@ namespace Soenneker.Blazor.Interops.Floating;
 public sealed class FloatingUiInterop : IFloatingUiInterop
 {
     private const string _floatingUiCoreCdnPath =
-        "https://cdn.jsdelivr.net/npm/@floating-ui/core@1.7.2/dist/floating-ui.core.umd.min.js";
+        "https://cdn.jsdelivr.net/npm/@floating-ui/core@1.7.5/dist/floating-ui.core.umd.min.js";
 
     private const string _floatingUiDomCdnPath =
-        "https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.2/dist/floating-ui.dom.umd.min.js";
+        "https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.6/dist/floating-ui.dom.umd.min.js";
 
-    private const string _floatingUiCoreIntegrity = "sha256-OhWDdFHrIg8eNZaNgWL2ax7tjKNFOBQq3WErqxfHdlQ=";
-    private const string _floatingUiDomIntegrity = "sha256-cycZmidLw+l9uWDr4bUhL26YMJg1G6aM0AnUEPG9sME=";
+    private const string _floatingUiCoreIntegrity = "sha256-/AzKIabPLvDJyQj77eBhTcryhejr/tINDhRPr8Lr8Fk=";
+    private const string _floatingUiDomIntegrity = "sha256-IUteAZ9w/aNsfwo15es6qE+lNEjA+MrE96TB4m5xSYw=";
 
     private const string _floatingUiCoreLocalPath =
         "_content/Soenneker.Blazor.Interops.Floating/js/floating-ui.core.umd.min.js";
