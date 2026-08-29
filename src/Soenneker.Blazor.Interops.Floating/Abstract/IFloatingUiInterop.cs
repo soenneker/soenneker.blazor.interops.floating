@@ -14,5 +14,6 @@ public interface IFloatingUiInterop : IAsyncDisposable
     /// </summary>
     /// <param name="useCdn">Whether to load Floating UI from CDN or from this package's static web assets.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A task that completes when the Floating Ui is ready for use.</returns>
     ValueTask Initialize(bool useCdn = true, CancellationToken cancellationToken = default);
 }

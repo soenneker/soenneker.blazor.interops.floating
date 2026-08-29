@@ -13,6 +13,8 @@ public static class FloatingUiInteropRegistrar
     /// <summary>
     /// Adds <see cref="IFloatingUiInterop"/> as a scoped service.
     /// </summary>
+    /// <param name="services">Service collection that receives the registration.</param>
+    /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddFloatingInteropAsScoped(this IServiceCollection services)
     {
         return services.AddFloatingUiInteropAsScoped();
@@ -21,6 +23,8 @@ public static class FloatingUiInteropRegistrar
     /// <summary>
     /// Adds <see cref="IFloatingUiInterop"/> as a scoped service.
     /// </summary>
+    /// <param name="services">Service collection that receives the registration.</param>
+    /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddFloatingUiInteropAsScoped(this IServiceCollection services)
     {
         services.AddResourceLoaderAsScoped();
