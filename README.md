@@ -3,33 +3,42 @@
 [![](https://img.shields.io/nuget/dt/soenneker.blazor.interops.floating.svg?style=for-the-badge)](https://www.nuget.org/packages/soenneker.blazor.interops.floating/)
 [![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.blazor.interops.floating/codeql.yml?style=for-the-badge)](https://github.com/soenneker/soenneker.blazor.interops.floating/actions/workflows/codeql.yml)
 
-# ![](https://user-images.githubusercontent.com/4441470/224455560-91ed3ee7-f510-4041-a8d2-3fc093025112.png) Soenneker.Blazor.Interops.Floating
-### A Blazor interop library for Floating UI
+# Soenneker.Blazor.Interops.Floating
 
-## Installation
+Provides shared Blazor interop for loading Floating UI browser dependencies.
+
+## Install
 
 ```bash
 dotnet add package Soenneker.Blazor.Interops.Floating
 ```
 
-## Setup
-
-Register services in `Program.cs`:
+## Quick start
 
 ```csharp
-builder.Services.AddFloatingUiInteropAsScoped();
+using Soenneker.Blazor.Interops.Floating.Registrars;
+using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+var result = services.AddFloatingInteropAsScoped();
 ```
 
-Inject the higher-level utility where you need it:
+Adds `IFloatingUiInterop` as a scoped service.
 
-```csharp
-@inject IFloatingUiInterop Floating
-```
+## What you get
 
-## Usage
+- `IFloatingUiInterop` — Provides shared Blazor interop for loading Floating UI browser dependencies.
+- `FloatingUiInteropRegistrar` — Registration for the interop and utility services.
 
-Initialize the package once before first use:
+## API at a glance
 
-```csharp
-await Floating.Initialize();
-```
+| API | What it does | Result / important behavior |
+| --- | --- | --- |
+| `IFloatingUiInterop.Initialize(useCdn, cancellationToken)` | Ensures the Floating UI core and DOM browser globals are available. | A task that completes when the Floating Ui is ready for use. |
+| `FloatingUiInteropRegistrar.AddFloatingInteropAsScoped(services)` | Adds `IFloatingUiInterop` as a scoped service. | The same service collection, so additional registrations can be chained. |
+| `FloatingUiInteropRegistrar.AddFloatingUiInteropAsScoped(services)` | Adds `IFloatingUiInterop` as a scoped service. | The same service collection, so additional registrations can be chained. |
+
+## Practical notes
+
+- Cancellation stops pending work; it does not undo work that has already completed.
+- Dispose instances you own when their scope ends so held resources can be released.
