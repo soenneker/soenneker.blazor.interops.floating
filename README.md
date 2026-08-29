@@ -5,40 +5,43 @@
 
 # Soenneker.Blazor.Interops.Floating
 
-Provides shared Blazor interop for loading Floating UI browser dependencies.
+A small shared loader for the browser builds of Floating UI Core and Floating UI DOM. It makes the `FloatingUICore` and `FloatingUIDOM` JavaScript globals available to other Blazor interop libraries.
 
-## Install
+This package does not expose `computePosition` or render a tooltip, popover, or floating window by itself. Application code looking for a ready-made component should use a higher-level package such as `Soenneker.Blazor.Floating.Tooltips`.
+
+## Installation
 
 ```bash
 dotnet add package Soenneker.Blazor.Interops.Floating
 ```
 
-## Quick start
+## Registration
 
 ```csharp
 using Soenneker.Blazor.Interops.Floating.Registrars;
-using Microsoft.Extensions.DependencyInjection;
 
-var services = new ServiceCollection();
-var result = services.AddFloatingInteropAsScoped();
+builder.Services.AddFloatingUiInteropAsScoped();
 ```
 
-Adds `IFloatingUiInterop` as a scoped service.
+`AddFloatingInteropAsScoped()` is retained as an alias for the same registration.
 
-## What you get
+## Initialize the browser dependencies
 
-- `IFloatingUiInterop` — Provides shared Blazor interop for loading Floating UI browser dependencies.
-- `FloatingUiInteropRegistrar` — Registration for the interop and utility services.
+Inject `IFloatingUiInterop` into the component or interop service that needs the JavaScript globals, then initialize after browser interop is available:
 
-## API at a glance
+```razor
+@using Soenneker.Blazor.Interops.Floating.Abstract
+@inject IFloatingUiInterop FloatingUi
 
-| API | What it does | Result / important behavior |
-| --- | --- | --- |
-| `IFloatingUiInterop.Initialize(useCdn, cancellationToken)` | Ensures the Floating UI core and DOM browser globals are available. | A task that completes when the Floating Ui is ready for use. |
-| `FloatingUiInteropRegistrar.AddFloatingInteropAsScoped(services)` | Adds `IFloatingUiInterop` as a scoped service. | The same service collection, so additional registrations can be chained. |
-| `FloatingUiInteropRegistrar.AddFloatingUiInteropAsScoped(services)` | Adds `IFloatingUiInterop` as a scoped service. | The same service collection, so additional registrations can be chained. |
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await FloatingUi.Initialize(useCdn: false);
+    }
+}
+```
 
-## Practical notes
+With `useCdn: true` (the default), pinned Floating UI scripts are loaded from jsDelivr with integrity checks. With `false`, the package's static web assets are loaded instead. The scoped loader initializes once, so all consumers in the same scope should use the same source choice; the first successful call determines it.
 
-- Cancellation stops pending work; it does not undo work that has already completed.
-- Dispose instances you own when their scope ends so held resources can be released.
+Initialization is safe to call repeatedly and concurrently. Cancellation stops a pending caller but does not unload scripts already added to the page. Disposing the scoped service releases its .NET initialization resources; browser globals remain on the page.
