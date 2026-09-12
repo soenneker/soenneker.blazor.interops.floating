@@ -1,14 +1,15 @@
+using Soenneker.Asyncs.Locks;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Soenneker.Asyncs.Initializers;
+using Soenneker.Atomics.ValueBools;
 using Soenneker.Blazor.Interops.Floating.Abstract;
 using Soenneker.Blazor.Utils.ResourceLoader.Abstract;
 using Soenneker.Extensions.CancellationTokens;
-using Soenneker.Utils.CancellationScopes;
 
 namespace Soenneker.Blazor.Interops.Floating;
 
-/// <inheritdoc cref="IFloatingUiInterop"/>
 public sealed class FloatingUiInterop : IFloatingUiInterop
 {
     private const string _floatingUiCoreCdnPath =
@@ -28,18 +29,29 @@ public sealed class FloatingUiInterop : IFloatingUiInterop
 
     private readonly IResourceLoader _resourceLoader;
     private readonly AsyncInitializer<bool> _scriptInitializer;
-    private readonly CancellationScope _cancellationScope = new();
+    private readonly CancellationTokenSource _lifetimeCancellation = new();
+    private readonly CancellationToken _lifetimeToken;
+    private ValueAtomicBool _disposed;
+    private readonly AsyncLock _lifetimeGate = new();
 
     public FloatingUiInterop(IResourceLoader resourceLoader)
     {
-        _resourceLoader = resourceLoader;
+        _lifetimeToken = _lifetimeCancellation.Token;
+        _resourceLoader = resourceLoader ?? throw new ArgumentNullException(nameof(resourceLoader));
         _scriptInitializer = new AsyncInitializer<bool>(InitializeScripts);
     }
 
-    public async ValueTask Initialize(bool useCdn = true, CancellationToken cancellationToken = default)
+    public ValueTask Initialize(bool useCdn = true, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed.Value, this);
+        cancellationToken.ThrowIfCancellationRequested();
+        return _scriptInitializer.IsInitialized ? ValueTask.CompletedTask : InitializeCore(useCdn, cancellationToken);
+    }
+
+    private async ValueTask InitializeCore(bool useCdn, CancellationToken cancellationToken)
     {
         CancellationToken linked =
-            _cancellationScope.CancellationToken.Link(cancellationToken, out CancellationTokenSource? source);
+            GetLifetimeToken().Link(cancellationToken, out CancellationTokenSource? source);
 
         using (source)
             await _scriptInitializer.Init(useCdn, linked);
@@ -49,26 +61,56 @@ public sealed class FloatingUiInterop : IFloatingUiInterop
     {
         if (useCdn)
         {
-            await _resourceLoader.LoadScriptAndWaitForVariable(_floatingUiCoreCdnPath, "FloatingUICore",
+            await _resourceLoader.LoadScript(_floatingUiCoreCdnPath,
                 _floatingUiCoreIntegrity, cancellationToken: token);
-            await _resourceLoader.LoadScriptAndWaitForVariable(_floatingUiDomCdnPath, "FloatingUIDOM",
+            await _resourceLoader.LoadScript(_floatingUiDomCdnPath,
                 _floatingUiDomIntegrity, cancellationToken: token);
             return;
         }
 
-        await _resourceLoader.LoadScriptAndWaitForVariable(_floatingUiCoreLocalPath, "FloatingUICore",
+        // These UMD bundles publish their globals synchronously before the load event.
+        // DOM depends on core, so preserve this order without polling either global.
+        await _resourceLoader.LoadScript(_floatingUiCoreLocalPath,
             cancellationToken: token);
-        await _resourceLoader.LoadScriptAndWaitForVariable(_floatingUiDomLocalPath, "FloatingUIDOM",
+        await _resourceLoader.LoadScript(_floatingUiDomLocalPath,
             cancellationToken: token);
     }
 
-    /// <summary>
-    /// Asynchronously releases resources used by the current instance.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
+    private CancellationToken GetLifetimeToken()
+    {
+        using (_lifetimeGate.LockSync())
+        {
+            ObjectDisposedException.ThrowIf(_disposed.Value, this);
+            return _lifetimeToken;
+        }
+    }
+
+    private async ValueTask CancelLifetime()
+    {
+        try
+        {
+            await _lifetimeCancellation.CancelAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            // A cancellation callback must not prevent reference cleanup.
+        }
+        finally
+        {
+            _lifetimeCancellation.Dispose();
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
+        using (await _lifetimeGate.Lock().ConfigureAwait(false))
+        {
+            if (!_disposed.TrySetTrue())
+                return;
+        }
+
+        // Cancel an in-flight load before waiting for the initializer's gate.
+        await CancelLifetime();
         await _scriptInitializer.DisposeAsync();
-        await _cancellationScope.DisposeAsync();
     }
 }

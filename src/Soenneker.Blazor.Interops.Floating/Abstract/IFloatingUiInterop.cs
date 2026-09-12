@@ -12,6 +12,10 @@ public interface IFloatingUiInterop : IAsyncDisposable
     /// <summary>
     /// Ensures the Floating UI core and DOM browser globals are available.
     /// </summary>
+    /// <remarks>
+    /// Loads core before DOM. These UMD bundles publish their globals synchronously, so no polling is needed.
+    /// The first successful initialization chooses the source for this service's lifetime.
+    /// </remarks>
     /// <param name="useCdn">Whether to load Floating UI from CDN or from this package's static web assets.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>A task that completes when the Floating Ui is ready for use.</returns>
