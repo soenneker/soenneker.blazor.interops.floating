@@ -1,4 +1,3 @@
-using Soenneker.Asyncs.Locks;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +31,7 @@ public sealed class FloatingUiInterop : IFloatingUiInterop
     private readonly CancellationTokenSource _lifetimeCancellation = new();
     private readonly CancellationToken _lifetimeToken;
     private ValueAtomicBool _disposed;
-    private readonly AsyncLock _lifetimeGate = new();
+    private readonly Lock _lifetimeGate = new();
 
     public FloatingUiInterop(IResourceLoader resourceLoader)
     {
@@ -78,7 +77,7 @@ public sealed class FloatingUiInterop : IFloatingUiInterop
 
     private CancellationToken GetLifetimeToken()
     {
-        using (_lifetimeGate.LockSync())
+        lock (_lifetimeGate)
         {
             ObjectDisposedException.ThrowIf(_disposed.Value, this);
             return _lifetimeToken;
@@ -103,7 +102,7 @@ public sealed class FloatingUiInterop : IFloatingUiInterop
 
     public async ValueTask DisposeAsync()
     {
-        using (await _lifetimeGate.Lock().ConfigureAwait(false))
+        lock (_lifetimeGate)
         {
             if (!_disposed.TrySetTrue())
                 return;
